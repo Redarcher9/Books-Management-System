@@ -36,7 +36,7 @@ func main() {
 	redisInstance := setUpRedis()
 	routes.SetupRoutes(r, dbInstance, kafkaInstance, redisInstance)
 	routes.SetupSwagger(r)
-	r.Run(port)
+	r.Run(":" + port)
 }
 
 func setUpDatabase() *gorm.DB {
