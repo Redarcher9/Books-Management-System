@@ -39,7 +39,8 @@ func main() {
 }
 
 func setUpDatabase() *gorm.DB {
-	dsn := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=%s", envConfig.DbUsername, envConfig.DbPassword, envConfig.DbName, envConfig.DbPort, envConfig.DbSSLMode)
+	//dsn := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=%s", envConfig.DbUsername, envConfig.DbPassword, envConfig.DbName, envConfig.DbPort, envConfig.DbSSLMode)
+	dsn := "postgres://avnadmin:AVNS_PuwYbVmsPbBzKk83CMH@books-management-system-books-management-system.l.aivencloud.com:28842/defaultdb?sslmode=require"
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
 		PreferSimpleProtocol: true,
