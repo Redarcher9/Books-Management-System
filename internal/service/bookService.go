@@ -39,6 +39,7 @@ func (c BookInteractor) DeleteBookByID(ctx context.Context, ID int) error {
 		"event": "DELETE",
 		"ID":    ID,
 	}
+	//Publish kafka message
 	c.KafkaProducer.Publish(ctx, "book_events", message)
 	return nil
 }
@@ -55,6 +56,7 @@ func (c BookInteractor) UpdateBookByID(ctx context.Context, ID int, book domain.
 		"AUTHOR": book.Author,
 		"YEAR":   book.Year,
 	}
+	//Publish kafka message
 	c.KafkaProducer.Publish(ctx, "book_events", message)
 	return nil
 }
@@ -70,6 +72,7 @@ func (c BookInteractor) CreateBook(ctx context.Context, book *domain.Book) error
 		"AUTHOR": book.Author,
 		"YEAR":   book.Year,
 	}
+	//Publish kafka message
 	c.KafkaProducer.Publish(ctx, "book_events", message)
 	return nil
 }

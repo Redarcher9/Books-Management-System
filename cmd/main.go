@@ -28,16 +28,21 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-
-	port := fmt.Sprintf(":%s", envConfig.APIPort) //os.Getenv("PORT")
+	//Instantiate Database,Kafka and Redis Server
 	dbInstance := setUpDatabase()
 	kafkaInstance := setUpKafkaProducer()
 	redisInstance := setUpRedis()
+
+	//Setup Routes and Swagger URLs
 	routes.SetupRoutes(r, dbInstance, kafkaInstance, redisInstance)
 	routes.SetupSwagger(r)
-	r.Run(port) //r.Run(":" + port)
+
+	//Run the Gin server on specified port
+	port := fmt.Sprintf(":%s", envConfig.APIPort)
+	r.Run(port)
 }
 
+// Sets up Database and Returns Database Instance
 func setUpDatabase() *gorm.DB {
 	dsn := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=%s", envConfig.DbUsername, envConfig.DbPassword, envConfig.DbName, envConfig.DbPort, envConfig.DbSSLMode)
 	db, err := gorm.Open(postgres.New(postgres.Config{
@@ -50,15 +55,17 @@ func setUpDatabase() *gorm.DB {
 	return db
 }
 
+// Sets up kafka and Returns kafka Instance
 func setUpKafkaProducer() *kafka.KafkaProducer {
 	return kafka.NewKafkaProducer(envConfig.KafkaAddress, envConfig.KafkaTopic)
 }
 
+// Sets up Redis and Returns Redis Instance
 func setUpRedis() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     envConfig.RedisAddress,  // e.g. "localhost:6379"
-		Password: envConfig.RedisPassword, // no password set
-		DB:       envConfig.RedisDB,       // use default DB
+		Addr:     envConfig.RedisAddress,
+		Password: envConfig.RedisPassword,
+		DB:       envConfig.RedisDB,
 	})
 
 	return rdb

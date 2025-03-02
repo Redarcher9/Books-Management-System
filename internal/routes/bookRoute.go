@@ -11,9 +11,12 @@ import (
 )
 
 func NewBookRouter(group *gin.RouterGroup, db *gorm.DB, kafka *kafka.KafkaProducer, redis *redis.Client) {
+	//Instantiate Repository, Service and Controller through dependency injection
 	bookRepo := repository.NewBooksRepo(db, redis)
 	bookService := service.NewBookInteractor(bookRepo, kafka)
 	bookController := controller.NewBookController(bookService)
+
+	//Initialise Routes
 	group.GET("/books", bookController.GetBooks)
 	group.GET("/books/:id", bookController.GetBookByID)
 	group.DELETE("/books/:id", bookController.DeleteBookByID)
