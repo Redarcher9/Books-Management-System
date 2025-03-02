@@ -58,9 +58,9 @@ func setUpKafkaProducer() *kafka.KafkaProducer {
 
 func setUpRedis() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     envConfig.RedisAddress,  // e.g. "localhost:6379"
-		Password: envConfig.RedisPassword, // no password set
-		DB:       envConfig.RedisDB,       // use default DB
+		Addr:     "redis-18205.c72.eu-west-1-2.ec2.redns.redis-cloud.com:18205",
+		Password: "kw7ho6G8OFw1EkLSScyAzToZA6xMdqfc",
+		DB:       0,
 	})
 
 	return rdb
