@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Redarcher9/Books-Management-System/config"
 	"github.com/Redarcher9/Books-Management-System/internal/infrastructure/kafka"
 	"github.com/Redarcher9/Books-Management-System/internal/routes"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"gorm.io/driver/postgres"
@@ -15,7 +17,19 @@ import (
 var envConfig = config.Init()
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+
+	// CORS configuration
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // Update with specific origins in production
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	port := fmt.Sprintf(":%s", envConfig.APIPort)
 	dbInstance := setUpDatabase()
 	kafkaInstance := setUpKafkaProducer()
