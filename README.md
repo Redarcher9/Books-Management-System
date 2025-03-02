@@ -40,8 +40,6 @@ If the topic `book_events` appears in the list, the creation was successful!
   /opt/homebrew/opt/redis/bin/redis-server /opt/homebrew/etc/redis.conf
 ```
 
-If Redis is running, the response should be `PONG`.
-
 #### PostgreSQL Setup
 
 🐘 **Start PostgreSQL Server:**
