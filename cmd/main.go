@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/Redarcher9/Books-Management-System/config"
@@ -29,7 +30,7 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	port := fmt.Sprintf(":%s", envConfig.APIPort)
+	port := os.Getenv("PORT") //fmt.Sprintf(":%s", envConfig.APIPort)
 	dbInstance := setUpDatabase()
 	kafkaInstance := setUpKafkaProducer()
 	redisInstance := setUpRedis()
