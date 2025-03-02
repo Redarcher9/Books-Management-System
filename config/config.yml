@@ -1,0 +1,12 @@
+ENVIRONMENT:
+API_PORT: 8084
+DB_PORT: 5432
+DB_USERNAME: 'postgres'
+DB_PASSWORD: 'postgres'
+DB_NAME: 'books-management-system'
+DB_SSL_MODE: 'disable'
+KAFKA_TOPIC: 'book_events'
+KAFKA_ADDRESS: 'localhost:9092'
+REDIS_ADDRESS: 'localhost:6379'
+REDIS_PASSWORD: ''
+REDIS_DB: 0
