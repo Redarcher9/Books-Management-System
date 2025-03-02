@@ -37,7 +37,7 @@ If the topic `book_events` appears in the list, the creation was successful!
 ⚙️ **Verify Redis is running:**
 
 ```bash
-redis-cli ping
+  /opt/homebrew/opt/redis/bin/redis-server /opt/homebrew/etc/redis.conf
 ```
 
 If Redis is running, the response should be `PONG`.
