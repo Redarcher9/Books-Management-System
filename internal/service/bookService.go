@@ -43,7 +43,7 @@ func (c BookInteractor) DeleteBookByID(ctx context.Context, ID int) error {
 	return nil
 }
 
-func (c BookInteractor) UpdateBookByID(ctx context.Context, ID int, book domain.UpdateBookRequest) error {
+func (c BookInteractor) UpdateBookByID(ctx context.Context, ID int, book domain.Book) error {
 	err := c.Repo.UpdateBookByID(ctx, ID, book)
 	if err != nil {
 		return err

@@ -13,7 +13,6 @@ import (
 func SetupRoutes(gin *gin.Engine, gormDB *gorm.DB, kafka *kafka.KafkaProducer, redis *redis.Client) {
 	// @BasePath /api/v1
 	Router := gin.Group("/api/v1")
-	NewHelloWorldRouter(Router)
 	NewBookRouter(Router, gormDB, kafka, redis)
 }
 

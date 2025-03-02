@@ -53,7 +53,10 @@ func (b *Books) GetBooks(ctx context.Context, offset, limit int) ([]*domain.Book
 			// if book not found return nil
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to get books: %w", result.Error)
+		return nil, result.Error
+	}
+	if len(books) == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	domainBooks := make([]*domain.Book, 0, len(books))
@@ -80,14 +83,14 @@ func (b *Books) GetBookByID(ctx context.Context, ID int) (*domain.Book, error) {
 		}
 	}
 
-	var book *tables.Books
-	result := b.gormDB.Model(&tables.Books{}).
+	var book tables.Books // Note: Not a pointer here
+	result := b.gormDB.
 		Where("id = ?", ID).
-		Find(&book)
+		First(&book)
+
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			// if book not found return nil
-			return nil, nil
+			return nil, gorm.ErrRecordNotFound // Return nil if not found
 		}
 		return nil, fmt.Errorf("failed to get book by ID: %w", result.Error)
 	}
@@ -103,7 +106,7 @@ func (b *Books) CreateBook(ctx context.Context, book *domain.Book) error {
 	// Check if the book already exists (by Title and Author)
 	var existingBook tables.Books
 	if err := b.gormDB.Where("title = ? AND author = ?", book.Title, book.Author).First(&existingBook).Error; err == nil {
-		return fmt.Errorf("book with title '%s' by author '%s' already exists", book.Title, book.Author)
+		return gorm.ErrDuplicatedKey
 	}
 
 	newBook := &tables.Books{
@@ -119,10 +122,14 @@ func (b *Books) CreateBook(ctx context.Context, book *domain.Book) error {
 	return nil
 }
 
-func (b *Books) UpdateBookByID(ctx context.Context, ID int, book domain.UpdateBookRequest) error {
+func (b *Books) UpdateBookByID(ctx context.Context, ID int, book domain.Book) error {
 	response := b.gormDB.Model(&tables.Books{}).Where("id = ?", ID).Updates(book)
 	if response.Error != nil {
 		return response.Error
+	}
+
+	if response.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 
 	b.expireCache()

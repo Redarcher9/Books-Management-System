@@ -7,16 +7,10 @@ import (
 )
 
 type Book struct {
-	ID     int    `json:"id" validate:"omitempty"`
+	ID     int    `json:"id" example:"1" validate:"omitempty"`
 	Title  string `json:"title" validate:"required,max=255"`
 	Author string `json:"author" validate:"required,max=255"`
-	Year   int    `json:"year" validate:"required,validYear"`
-}
-
-type UpdateBookRequest struct {
-	Title  string `json:"title" binding:"required"`
-	Author string `json:"author" binding:"required"`
-	Year   int    `json:"year" binding:"required,min=1000,max=9999"`
+	Year   int    `json:"year" example:"1957" validate:"required,validYear"`
 }
 
 func validYear(f1 validator.FieldLevel) bool {
@@ -36,7 +30,7 @@ func (b *Book) Validate() error {
 	// Register custom validation for 'Year'
 	validate.RegisterValidation("validYear", func(fl validator.FieldLevel) bool {
 		year := fl.Field().Int()
-		return year >= 1450 && year <= 2100
+		return year >= 1450 && year <= 2025
 	})
 
 	// Validate the struct
@@ -46,4 +40,10 @@ func (b *Book) Validate() error {
 		}
 	}
 	return nil
+}
+
+type BookRequest struct {
+	Title  string `json:"title" validate:"required,max=255"`
+	Author string `json:"author" validate:"required,max=255"`
+	Year   int    `json:"year" example:"1957" validate:"required,validYear"`
 }

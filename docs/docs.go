@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/books": {
             "get": {
-                "description": "Get all books for the provided limit and offset",
+                "description": "Retrieve all books with pagination. If the provided offset or limit is less than 0, default values of limit = 10 and offset = 0 will be applied automatically.",
                 "consumes": [
                     "application/json"
                 ],
@@ -57,11 +57,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             },
@@ -79,34 +76,34 @@ const docTemplate = `{
                 "summary": "Create a new book",
                 "parameters": [
                     {
-                        "description": "Book data",
+                        "description": "Book data to create",
                         "name": "book",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.Book"
+                            "$ref": "#/definitions/domain.BookRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Book"
-                        }
+                        "description": "Book Created Successfully"
                     },
                     "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Validation Error"
+                    },
+                    "409": {
+                        "description": "Book with provided Title and Author already exists"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
         },
         "/books/{id}": {
             "get": {
-                "description": "Retrieve a book by its ID",
+                "description": "Fetch detailed information about a book using its unique ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -134,16 +131,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID format",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Invalid ID format"
                     },
                     "404": {
-                        "description": "Book not found",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Book not found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             },
@@ -173,28 +167,22 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.UpdateBookRequest"
+                            "$ref": "#/definitions/domain.BookRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Book updated successfully",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Book updated successfully"
                     },
                     "400": {
-                        "description": "Invalid request data",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Validation Error"
                     },
                     "404": {
-                        "description": "Book not found",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Book to update not found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             },
@@ -214,8 +202,11 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "Book Deleted Successfully"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -258,18 +249,20 @@ const docTemplate = `{
                     "maxLength": 255
                 },
                 "id": {
-                    "type": "string"
+                    "type": "integer",
+                    "example": 1
                 },
                 "title": {
                     "type": "string",
                     "maxLength": 255
                 },
                 "year": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1957
                 }
             }
         },
-        "domain.UpdateBookRequest": {
+        "domain.BookRequest": {
             "type": "object",
             "required": [
                 "author",
@@ -278,15 +271,16 @@ const docTemplate = `{
             ],
             "properties": {
                 "author": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "year": {
                     "type": "integer",
-                    "maximum": 9999,
-                    "minimum": 1000
+                    "example": 1957
                 }
             }
         }

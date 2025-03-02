@@ -5,26 +5,29 @@ definitions:
         maxLength: 255
         type: string
       id:
-        type: string
+        example: 1
+        type: integer
       title:
         maxLength: 255
         type: string
       year:
+        example: 1957
         type: integer
     required:
     - author
     - title
     - year
     type: object
-  domain.UpdateBookRequest:
+  domain.BookRequest:
     properties:
       author:
+        maxLength: 255
         type: string
       title:
+        maxLength: 255
         type: string
       year:
-        maximum: 9999
-        minimum: 1000
+        example: 1957
         type: integer
     required:
     - author
@@ -38,7 +41,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all books for the provided limit and offset
+      description: Retrieve all books with pagination. If the provided offset or limit
+        is less than 0, default values of limit = 10 and offset = 0 will be applied
+        automatically.
       parameters:
       - default: 0
         description: Offset for pagination
@@ -61,10 +66,8 @@ paths:
                 $ref: '#/definitions/domain.Book'
               type: array
             type: array
-        "400":
-          description: Bad Request
-          schema:
-            type: string
+        "500":
+          description: Internal Server Error
       summary: Get all books with pagination
       tags:
       - books
@@ -73,23 +76,23 @@ paths:
       - application/json
       description: Create a new book with title, author, and year
       parameters:
-      - description: Book data
+      - description: Book data to create
         in: body
         name: book
         required: true
         schema:
-          $ref: '#/definitions/domain.Book'
+          $ref: '#/definitions/domain.BookRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/domain.Book'
+          description: Book Created Successfully
         "400":
-          description: Bad Request
-          schema:
-            type: string
+          description: Validation Error
+        "409":
+          description: Book with provided Title and Author already exists
+        "500":
+          description: Internal Server Error
       summary: Create a new book
       tags:
       - books
@@ -103,15 +106,17 @@ paths:
         required: true
         type: integer
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: Book Deleted Successfully
+        "500":
+          description: Internal Server Error
       summary: Delete a book by ID
       tags:
       - books
     get:
       consumes:
       - application/json
-      description: Retrieve a book by its ID
+      description: Fetch detailed information about a book using its unique ID.
       parameters:
       - description: Book ID
         in: path
@@ -127,12 +132,10 @@ paths:
             $ref: '#/definitions/domain.Book'
         "400":
           description: Invalid ID format
-          schema:
-            type: string
         "404":
           description: Book not found
-          schema:
-            type: string
+        "500":
+          description: Internal Server Error
       summary: Get a book by ID
       tags:
       - books
@@ -151,22 +154,18 @@ paths:
         name: book
         required: true
         schema:
-          $ref: '#/definitions/domain.UpdateBookRequest'
+          $ref: '#/definitions/domain.BookRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Book updated successfully
-          schema:
-            type: string
         "400":
-          description: Invalid request data
-          schema:
-            type: string
+          description: Validation Error
         "404":
-          description: Book not found
-          schema:
-            type: string
+          description: Book to update not found
+        "500":
+          description: Internal Server Error
       summary: Update a book by ID
       tags:
       - books

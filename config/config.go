@@ -21,12 +21,6 @@ type Config struct {
 	RedisDB       int    `mapstructure:"REDIS_DB"`
 }
 
-/*
-REDIS_ADDRESS: 'localhost:6379'
-REDIS_PASSWORD: ''
-REDIS_DB: 0
-*/
-
 func Init() *Config {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("config")

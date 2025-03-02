@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/Redarcher9/Books-Management-System/internal/domain"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type BookController struct {
@@ -23,14 +25,14 @@ func NewBookController(bookService BookService) *BookController {
 
 // GetAllBooks godoc
 // @Summary Get all books with pagination
-// @Description Get all books for the provided limit and offset
+// @Description Retrieve all books with pagination. If the provided offset or limit is less than 0, default values of limit = 10 and offset = 0 will be applied automatically.
 // @Tags books
 // @Accept json
 // @Produce json
 // @Param offset query int false "Offset for pagination" default(0) min(0)
 // @Param limit query int false "Limit for pagination" default(10) min(1) max(100)
 // @Success 200 {array} []domain.Book
-// @Failure 400 {object} string
+// @Failure 500  "Internal Server Error"
 // @Router /books [get]
 func (bc *BookController) GetBooks(g *gin.Context) {
 	// Get Query parameters with default values
@@ -46,7 +48,9 @@ func (bc *BookController) GetBooks(g *gin.Context) {
 
 	books, err := bc.BookInteractor.GetBooks(g, offset, limit)
 	if err != nil {
-		g.JSON(http.StatusNotFound, gin.H{"error": "Books not found"})
+		g.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+			Message: "Internal Server Error",
+		})
 		return
 	}
 	g.JSON(http.StatusOK, books)
@@ -54,14 +58,15 @@ func (bc *BookController) GetBooks(g *gin.Context) {
 
 // GetBookByID godoc
 // @Summary Get a book by ID
-// @Description Retrieve a book by its ID
+// @Description Fetch detailed information about a book using its unique ID.
 // @Tags books
 // @Accept json
 // @Produce json
 // @Param id path int true "Book ID"
 // @Success 200 {object} domain.Book
-// @Failure 400 {object} string "Invalid ID format"
-// @Failure 404 {object} string "Book not found"
+// @Failure 400 "Invalid ID format"
+// @Failure 404 "Book not found"
+// @Failure 500  "Internal Server Error"
 // @Router /books/{id} [get]
 func (bc *BookController) GetBookByID(g *gin.Context) {
 	// Get the 'ID' parameter
@@ -70,13 +75,23 @@ func (bc *BookController) GetBookByID(g *gin.Context) {
 	// Convert 'ID' to Int
 	id, err := strconv.Atoi(IDParam)
 	if err != nil {
-		g.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		g.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Invalid ID format",
+		})
 		return
 	}
 
 	book, err := bc.BookInteractor.GetBookByID(g, id)
 	if err != nil {
-		g.JSON(http.StatusNotFound, gin.H{"error": "Book not found"})
+		if err == gorm.ErrRecordNotFound {
+			g.JSON(http.StatusNotFound, domain.ErrorResponse{
+				Message: fmt.Sprintf("Book for ID %d not found", id),
+			})
+			return
+		}
+		g.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+			Message: "Internal Server Error",
+		})
 		return
 	}
 	g.JSON(http.StatusOK, book)
@@ -87,7 +102,8 @@ func (bc *BookController) GetBookByID(g *gin.Context) {
 // @Description Delete a book by its ID
 // @Tags books
 // @Param id path int true "Book ID"
-// @Success 204 "No Content"
+// @Success 200 "Book Deleted Successfully"
+// @Failure 500 "Internal Server Error"
 // @Router /books/{id} [delete]
 func (bc *BookController) DeleteBookByID(g *gin.Context) {
 	// Get the 'ID' parameter
@@ -96,16 +112,20 @@ func (bc *BookController) DeleteBookByID(g *gin.Context) {
 	// Convert 'ID' to Int
 	id, err := strconv.Atoi(IDParam)
 	if err != nil {
-		g.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		g.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Invalid ID format",
+		})
 		return
 	}
 
 	err = bc.BookInteractor.DeleteBookByID(g, id)
 	if err != nil {
-		g.JSON(http.StatusNotFound, gin.H{"error": "Could not Delete Book"})
+		g.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+			Message: "Internal Server Error",
+		})
 		return
 	}
-	g.Status(http.StatusNoContent)
+	g.Status(http.StatusOK)
 }
 
 // UpdateBookByID godoc
@@ -115,10 +135,11 @@ func (bc *BookController) DeleteBookByID(g *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Book ID"
-// @Param book body domain.UpdateBookRequest true "Book data to update"
-// @Success 200 {string} string "Book updated successfully"
-// @Failure 400 {object} string "Invalid request data"
-// @Failure 404 {string} string "Book not found"
+// @Param book body domain.BookRequest true "Book data to update"
+// @Success 200 "Book updated successfully"
+// @Failure 400 "Validation Error"
+// @Failure 404  "Book to update not found"
+// @Failure 500  "Internal Server Error"
 // @Router /books/{id} [put]
 func (bc *BookController) UpdateBookByID(g *gin.Context) {
 	// Get the 'ID' parameter
@@ -127,22 +148,43 @@ func (bc *BookController) UpdateBookByID(g *gin.Context) {
 	// Convert 'ID' to Int
 	id, err := strconv.Atoi(IDParam)
 	if err != nil {
-		g.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		g.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Invalid ID format",
+		})
 		return
 	}
 
-	var req domain.UpdateBookRequest
+	var req domain.Book
 	if err := g.ShouldBindJSON(&req); err != nil {
-		g.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+		g.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: fmt.Sprintf("Invalid data: %s", err.Error()),
+		})
+		return
+	}
+
+	// Validate the input data using the Book's Validate method
+	if err := req.Validate(); err != nil {
+		g.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: fmt.Sprintf("Invalid data: %s", err.Error()),
+		})
 		return
 	}
 
 	// call Service for updating
 	err = bc.BookInteractor.UpdateBookByID(g, id, req)
 	if err != nil {
-		g.Status(http.StatusNotFound)
+		if err == gorm.ErrRecordNotFound {
+			g.JSON(http.StatusNotFound, domain.ErrorResponse{
+				Message: fmt.Sprintf("Book for ID %d not found", id),
+			})
+			return
+		}
+		g.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+			Message: "Internal Server Error",
+		})
+		return
 	}
-	g.Status(http.StatusOK)
+	g.JSON(http.StatusOK, gin.H{"message": "book updated successfully"})
 }
 
 // CreateBook godoc
@@ -151,28 +193,42 @@ func (bc *BookController) UpdateBookByID(g *gin.Context) {
 // @Tags books
 // @Accept json
 // @Produce json
-// @Param book body domain.Book true "Book data"
-// @Success 201 {object} domain.Book
-// @Failure 400 {object} string
+// @Param book body domain.BookRequest true "Book data to create"
+// @Success 201 "Book Created Successfully"
+// @Failure 400 "Validation Error"
+// @Failure 409  "Book with provided Title and Author already exists"
+// @Failure 500  "Internal Server Error"
 // @Router /books [post]
 func (bc *BookController) CreateBook(g *gin.Context) {
-	var book domain.Book
-	if err := g.BindJSON(&book); err != nil {
-		g.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+	var req domain.Book
+	if err := g.ShouldBindJSON(&req); err != nil {
+		g.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: fmt.Sprintf("Invalid data: %s", err.Error()),
+		})
 		return
 	}
 
 	// Validate the input data using the Book's Validate method
-	if err := book.Validate(); err != nil {
-		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := req.Validate(); err != nil {
+		g.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: fmt.Sprintf("Invalid data: %s", err.Error()),
+		})
 		return
 	}
 
-	err := bc.BookInteractor.CreateBook(g, &book)
+	err := bc.BookInteractor.CreateBook(g, &req)
 	if err != nil {
-		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err == gorm.ErrDuplicatedKey {
+			g.JSON(http.StatusConflict, domain.ErrorResponse{
+				Message: fmt.Sprintf("Book with Title %s and Author %s already exists", req.Title, req.Author),
+			})
+			return
+		}
+		g.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+			Message: err.Error(),
+		})
 		return
 	}
 
-	g.JSON(http.StatusCreated, book)
+	g.JSON(http.StatusCreated, req)
 }
