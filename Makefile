@@ -1,4 +1,3 @@
-DBUrl=""
 
 start:
 	go run cmd/main.go
@@ -11,3 +10,9 @@ migrateup:
 
 startredis:
 	/opt/homebrew/opt/redis/bin/redis-server /opt/homebrew/etc/redis.conf
+
+startzookeeper:
+	brew services start zookeeper
+
+startKafka:
+	brew services start kafka
